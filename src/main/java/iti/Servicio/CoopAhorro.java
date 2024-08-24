@@ -1,9 +1,7 @@
 package iti.Servicio;
 
 import iti.connect.Connect;
-import iti.modelo.Cuenta;
 import iti.modelo.Transaccion;
-import iti.modelo.Usuario;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
