@@ -15,19 +15,39 @@ import java.util.List;
 
 public class CoopAhorro {
 
-    // Método para registrar un usuario
-    public void registrarUsuario(String nombre, String correo) throws SQLException {
-        try (Connection conn = Connect.getConnection()) {
-            String insertUsuario = "INSERT INTO usuarios (nombre, correo) VALUES (?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(insertUsuario)) {
-                stmt.setString(1, nombre);
-                stmt.setString(2, correo);
-                stmt.executeUpdate();
+    // Registrar un usuario
+        public void registrarUsuario(String nombre, String correo) throws SQLException {
+            try (Connection conn = Connect.getConnection()) {
+                String insertUsuario = "INSERT INTO usuarios (nombre, correo) VALUES (?, ?)";
+                try (PreparedStatement stmt = conn.prepareStatement(insertUsuario, PreparedStatement.RETURN_GENERATED_KEYS)) {
+                    stmt.setString(1, nombre);
+                    stmt.setString(2, correo);
+                    stmt.executeUpdate();
+
+                    // Obtener el ID del usuario recién creado
+                    try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            int usuarioId = generatedKeys.getInt(1);
+                            crearCuentaParaUsuario(usuarioId);
+                        }
+                    }
+                }
             }
         }
-    }
 
-    // Método para realizar un depósito
+        // Crear una cuenta para un usuario recién registrado
+        private void crearCuentaParaUsuario(int usuarioId) throws SQLException {
+            try (Connection conn = Connect.getConnection()) {
+                String insertCuenta = "INSERT INTO cuentas (saldo, usuario_id) VALUES (?, ?)";
+                try (PreparedStatement stmt = conn.prepareStatement(insertCuenta)) {
+                    stmt.setDouble(1, 0.0); // Saldo inicial 0
+                    stmt.setInt(2, usuarioId);
+                    stmt.executeUpdate();
+                }
+            }
+        }
+
+    // Realizar un depósito
     public void depositar(int cuentaId, double monto) throws SQLException {
         try (Connection conn = Connect.getConnection()) {
             String updateSaldo = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
@@ -40,7 +60,7 @@ public class CoopAhorro {
         }
     }
 
-    // Método para realizar una transferencia entre dos cuentas
+    // Transferencia entre dos cuentas
     public void transferir(int cuentaOrigenId, int cuentaDestinoId, double monto) throws SQLException {
         try (Connection conn = Connect.getConnection()) {
             conn.setAutoCommit(false);
@@ -65,7 +85,7 @@ public class CoopAhorro {
         }
     }
 
-    // Método para registrar una transacción en el historial
+    // Registrar una transacción en el historial
     private void registrarTransaccion(int cuentaOrigenId, int cuentaDestinoId, double monto, String tipo) throws SQLException {
         try (Connection conn = Connect.getConnection()) {
             String insertTransaccion = "INSERT INTO transacciones (cuenta_origen_id, cuenta_destino_id, monto, tipo, fecha) VALUES (?, ?, ?, ?, ?)";
@@ -80,7 +100,7 @@ public class CoopAhorro {
         }
     }
 
-    // Método para obtener el historial de transacciones de una cuenta
+    // Historial de transacciones de una cuenta
     public List<Transaccion> obtenerHistorial(int cuentaId) throws SQLException {
         List<Transaccion> historial = new ArrayList<>();
         try (Connection conn = Connect.getConnection()) {
@@ -106,7 +126,7 @@ public class CoopAhorro {
         return historial;
     }
 
-    // Método para obtener el saldo de una cuenta
+    // Saldo de una cuenta
     public double obtenerSaldo(int cuentaId) throws SQLException {
         double saldo = 0;
         try (Connection conn = Connect.getConnection()) {

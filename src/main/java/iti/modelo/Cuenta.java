@@ -35,7 +35,6 @@ public class Cuenta {
         this.usuarioId = usuarioId;
     }
 
-    @Override
     public String toString() {
         return "Cuenta{" +
                 "id=" + id +
