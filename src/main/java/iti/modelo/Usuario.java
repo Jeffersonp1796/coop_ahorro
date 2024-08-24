@@ -1,4 +1,4 @@
-package Intervienen;
+package iti.modelo;
 
 public class Usuario {
     private int id;
@@ -34,5 +34,14 @@ public class Usuario {
 
     public void setCorreo(String correo) {
         this.correo = correo;
+    }
+
+    @Override
+    public String toString() {
+        return "Usuario{" +
+                "id=" + id +
+                ", nombre='" + nombre + '\'' +
+                ", correo='" + correo + '\'' +
+                '}';
     }
 }
