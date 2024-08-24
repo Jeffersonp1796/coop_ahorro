@@ -68,7 +68,6 @@ public class Transaccion {
         this.fecha = fecha;
     }
 
-    @Override
     public String toString() {
         return "Transaccion{" +
                 "id=" + id +

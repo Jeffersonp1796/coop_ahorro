@@ -31,7 +31,9 @@ public class Main {
                         String nombre = scanner.nextLine();
                         System.out.print("Ingrese el correo del usuario: ");
                         String correo = scanner.nextLine();
-                        coopAhorro.registrarUsuario(nombre, correo);
+                        System.out.print("Ingrese la cédula del usuario: ");
+                        String cedula = scanner.nextLine();
+                        coopAhorro.registrarUsuario(nombre, correo, cedula);
                         System.out.println("Usuario registrado con éxito.");
                         break;
                     case 2:

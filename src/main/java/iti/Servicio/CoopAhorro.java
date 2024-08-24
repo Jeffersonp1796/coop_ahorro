@@ -14,12 +14,13 @@ import java.util.List;
 public class CoopAhorro {
 
     // Registrar un usuario
-        public void registrarUsuario(String nombre, String correo) throws SQLException {
+        public void registrarUsuario(String nombre, String correo, String cedula) throws SQLException {
             try (Connection conn = Connect.getConnection()) {
-                String insertUsuario = "INSERT INTO usuarios (nombre, correo) VALUES (?, ?)";
+                String insertUsuario = "INSERT INTO usuarios (nombre, correo, cedula) VALUES (?, ?, ?)";
                 try (PreparedStatement stmt = conn.prepareStatement(insertUsuario, PreparedStatement.RETURN_GENERATED_KEYS)) {
                     stmt.setString(1, nombre);
                     stmt.setString(2, correo);
+                    stmt.setString(3, cedula);
                     stmt.executeUpdate();
 
                     // Obtener el ID del usuario recién creado
@@ -60,26 +61,65 @@ public class CoopAhorro {
 
     // Transferencia entre dos cuentas
     public void transferir(int cuentaOrigenId, int cuentaDestinoId, double monto) throws SQLException {
-        try (Connection conn = Connect.getConnection()) {
-            conn.setAutoCommit(false);
+        Connection conn = null;
+        PreparedStatement updateOrigen = null;
+        PreparedStatement updateDestino = null;
+        PreparedStatement insertTransaccion = null;
 
-            String updateOrigen = "UPDATE cuentas SET saldo = saldo - ? WHERE id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(updateOrigen)) {
-                stmt.setDouble(1, monto);
-                stmt.setInt(2, cuentaOrigenId);
-                stmt.executeUpdate();
+        try {
+            conn = Connect.getConnection();
+            conn.setAutoCommit(false); // Desactivar auto-commit para gestionar la transacción manualmente
+
+            // 1. Verificar si la cuenta origen tiene saldo suficiente
+            double saldoOrigen = obtenerSaldo(cuentaOrigenId);
+            if (saldoOrigen < monto) {
+                throw new SQLException("Saldo insuficiente en la cuenta origen.");
             }
 
-            String updateDestino = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(updateDestino)) {
-                stmt.setDouble(1, monto);
-                stmt.setInt(2, cuentaDestinoId);
-                stmt.executeUpdate();
+            // 2. Debitar el monto de la cuenta origen
+            String actualizarCuentaOrigen = "UPDATE cuentas SET saldo = saldo - ? WHERE id = ?";
+            updateOrigen = conn.prepareStatement(actualizarCuentaOrigen);
+            updateOrigen.setDouble(1, monto);
+            updateOrigen.setInt(2, cuentaOrigenId);
+            updateOrigen.executeUpdate();
+
+            // 3. Acreditar el monto en la cuenta destino
+            String actualizarCuentaDestino = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
+            updateDestino = conn.prepareStatement(actualizarCuentaDestino);
+            updateDestino.setDouble(1, monto);
+            updateDestino.setInt(2, cuentaDestinoId);
+            updateDestino.executeUpdate();
+
+            // 4. Registrar la transacción
+            String registrarTransaccion = "INSERT INTO transacciones (cuenta_origen_id, cuenta_destino_id, monto, tipo) VALUES (?, ?, ?, ?)";
+            insertTransaccion = conn.prepareStatement(registrarTransaccion);
+            insertTransaccion.setInt(1, cuentaOrigenId);
+            insertTransaccion.setInt(2, cuentaDestinoId);
+            insertTransaccion.setDouble(3, monto);
+            insertTransaccion.setString(4, "TRANSFERENCIA");
+            insertTransaccion.executeUpdate();
+
+            conn.commit(); // Confirmar la transacción
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback(); // Revertir la transacción en caso de error
             }
-
-            registrarTransaccion(cuentaOrigenId, cuentaDestinoId, monto, "TRANSFERENCIA");
-
-            conn.commit();
+            throw e;
+        } finally {
+            if (updateOrigen != null) {
+                updateOrigen.close();
+            }
+            if (updateDestino != null) {
+                updateDestino.close();
+            }
+            if (insertTransaccion != null) {
+                insertTransaccion.close();
+            }
+            if (conn != null) {
+                conn.setAutoCommit(true); // Restaurar el auto-commit
+                conn.close();
+            }
         }
     }
 
