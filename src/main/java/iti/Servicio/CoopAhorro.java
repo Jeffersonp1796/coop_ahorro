@@ -66,61 +66,76 @@ public class CoopAhorro {
         PreparedStatement updateDestino = null;
         PreparedStatement insertTransaccion = null;
 
-        try {
-            conn = Connect.getConnection();
-            conn.setAutoCommit(false); // Desactivar auto-commit para gestionar la transacción manualmente
+        int consultaorigen = consultacuenta(cuentaOrigenId);
+        int consultadestino = consultacuenta(cuentaDestinoId);
 
-            // 1. Verificar si la cuenta origen tiene saldo suficiente
-            double saldoOrigen = obtenerSaldo(cuentaOrigenId);
-            if (saldoOrigen < monto) {
-                throw new SQLException("Saldo insuficiente en la cuenta origen.");
-            }
+        if (consultaorigen == 0) {
+            System.out.println("No existe cuenta origen");
+        }
 
-            // 2. Debitar el monto de la cuenta origen
-            String actualizarCuentaOrigen = "UPDATE cuentas SET saldo = saldo - ? WHERE id = ?";
-            updateOrigen = conn.prepareStatement(actualizarCuentaOrigen);
-            updateOrigen.setDouble(1, monto);
-            updateOrigen.setInt(2, cuentaOrigenId);
-            updateOrigen.executeUpdate();
+        if (consultadestino == 0) {
+            System.out.println("No existe cuenta destino");
+        }
 
-            // 3. Acreditar el monto en la cuenta destino
-            String actualizarCuentaDestino = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
-            updateDestino = conn.prepareStatement(actualizarCuentaDestino);
-            updateDestino.setDouble(1, monto);
-            updateDestino.setInt(2, cuentaDestinoId);
-            updateDestino.executeUpdate();
+        if (consultaorigen ==1 && consultadestino==1 ){
+            try {
+                conn = Connect.getConnection();
+                conn.setAutoCommit(false); // Desactivar auto-commit para gestionar la transacción manualmente
 
-            // 4. Registrar la transacción
-            String registrarTransaccion = "INSERT INTO transacciones (cuenta_origen_id, cuenta_destino_id, monto, tipo) VALUES (?, ?, ?, ?)";
-            insertTransaccion = conn.prepareStatement(registrarTransaccion);
-            insertTransaccion.setInt(1, cuentaOrigenId);
-            insertTransaccion.setInt(2, cuentaDestinoId);
-            insertTransaccion.setDouble(3, monto);
-            insertTransaccion.setString(4, "TRANSFERENCIA");
-            insertTransaccion.executeUpdate();
 
-            conn.commit(); // Confirmar la transacción
+                // 1. Verificar si la cuenta origen tiene saldo suficiente
+                double saldoOrigen = obtenerSaldo(cuentaOrigenId);
+                if (saldoOrigen < monto) {
+                    throw new SQLException("Saldo insuficiente en la cuenta origen.");
+                }
 
-        } catch (SQLException e) {
-            if (conn != null) {
-                conn.rollback(); // Revertir la transacción en caso de error
-            }
-            throw e;
-        } finally {
-            if (updateOrigen != null) {
-                updateOrigen.close();
-            }
-            if (updateDestino != null) {
-                updateDestino.close();
-            }
-            if (insertTransaccion != null) {
-                insertTransaccion.close();
-            }
-            if (conn != null) {
-                conn.setAutoCommit(true); // Restaurar el auto-commit
-                conn.close();
+                // 2. Debitar el monto de la cuenta origen
+                String actualizarCuentaOrigen = "UPDATE cuentas SET saldo = saldo - ? WHERE id = ?";
+                updateOrigen = conn.prepareStatement(actualizarCuentaOrigen);
+                updateOrigen.setDouble(1, monto);
+                updateOrigen.setInt(2, cuentaOrigenId);
+                updateOrigen.executeUpdate();
+
+                // 3. Acreditar el monto en la cuenta destino
+                String actualizarCuentaDestino = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
+                updateDestino = conn.prepareStatement(actualizarCuentaDestino);
+                updateDestino.setDouble(1, monto);
+                updateDestino.setInt(2, cuentaDestinoId);
+                updateDestino.executeUpdate();
+
+                // 4. Registrar la transacción
+                String registrarTransaccion = "INSERT INTO transacciones (cuenta_origen_id, cuenta_destino_id, monto, tipo) VALUES (?, ?, ?, ?)";
+                insertTransaccion = conn.prepareStatement(registrarTransaccion);
+                insertTransaccion.setInt(1, cuentaOrigenId);
+                insertTransaccion.setInt(2, cuentaDestinoId);
+                insertTransaccion.setDouble(3, monto);
+                insertTransaccion.setString(4, "TRANSFERENCIA");
+                insertTransaccion.executeUpdate();
+
+                conn.commit(); // Confirmar la transacción
+
+            } catch (SQLException e) {
+                if (conn != null) {
+                    conn.rollback(); // Revertir la transacción en caso de error
+                }
+                throw e;
+            } finally {
+                if (updateOrigen != null) {
+                    updateOrigen.close();
+                }
+                if (updateDestino != null) {
+                    updateDestino.close();
+                }
+                if (insertTransaccion != null) {
+                    insertTransaccion.close();
+                }
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Restaurar el auto-commit
+                    conn.close();
+                }
             }
         }
+
     }
 
     // Registrar una transacción en el historial
@@ -180,5 +195,23 @@ public class CoopAhorro {
         }
         return saldo;
     }
+
+    public int consultacuenta(int cuentaId) throws SQLException {
+            int conteo=0;
+        try (Connection conn = Connect.getConnection()) {
+            String selectHistorial = "SELECT count(*) as conteo FROM cuentas WHERE id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(selectHistorial)) {
+                stmt.setInt(1, cuentaId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                               conteo= rs.getInt("conteo");
+                    }
+                }
+            }
+        }
+        return conteo;
+    }
+
+
 }
 

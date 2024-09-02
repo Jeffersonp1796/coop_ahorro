@@ -8,7 +8,7 @@ public class Connect {
     public static Connection getConnection(){
         Connection connection = null;
         // definir datos para crear conexion
-        var database = "coopahorro";
+        var database = "coop_ahorro";
         var url = "jdbc:mysql://localhost:3306/" + database;
         var username = "root";
         var password = "";
