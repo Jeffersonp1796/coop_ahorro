@@ -13,7 +13,6 @@ import java.util.List;
 
 public class CoopAhorro {
 
-    // Registrar un usuario
         public void registrarUsuario(String nombre, String correo, String cedula) throws SQLException {
             try (Connection conn = Connect.getConnection()) {
                 String insertUsuario = "INSERT INTO usuarios (nombre, correo, cedula) VALUES (?, ?, ?)";
@@ -23,7 +22,6 @@ public class CoopAhorro {
                     stmt.setString(3, cedula);
                     stmt.executeUpdate();
 
-                    // Obtener el ID del usuario recién creado
                     try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                         if (generatedKeys.next()) {
                             int usuarioId = generatedKeys.getInt(1);
@@ -34,7 +32,6 @@ public class CoopAhorro {
             }
         }
 
-        // Crear una cuenta para un usuario recién registrado
         private void crearCuentaParaUsuario(int usuarioId) throws SQLException {
             try (Connection conn = Connect.getConnection()) {
                 String insertCuenta = "INSERT INTO cuentas (saldo, usuario_id) VALUES (?, ?)";
@@ -46,7 +43,6 @@ public class CoopAhorro {
             }
         }
 
-    // Realizar un depósito
     public void depositar(int cuentaId, double monto) throws SQLException {
         try (Connection conn = Connect.getConnection()) {
             String updateSaldo = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
@@ -59,7 +55,7 @@ public class CoopAhorro {
         }
     }
 
-    // Transferencia entre dos cuentas
+
     public void transferir(int cuentaOrigenId, int cuentaDestinoId, double monto) throws SQLException {
         Connection conn = null;
         PreparedStatement updateOrigen = null;
@@ -83,27 +79,23 @@ public class CoopAhorro {
                 conn.setAutoCommit(false);
 
 
-                // Verificar si la cuenta origen tiene saldo suficiente
                 double saldoOrigen = obtenerSaldo(cuentaOrigenId);
                 if (saldoOrigen < monto) {
                     throw new SQLException("Saldo insuficiente en la cuenta origen.");
                 }
 
-                //Debitar el monto de la cuenta origen
                 String actualizarCuentaOrigen = "UPDATE cuentas SET saldo = saldo - ? WHERE id = ?";
                 updateOrigen = conn.prepareStatement(actualizarCuentaOrigen);
                 updateOrigen.setDouble(1, monto);
                 updateOrigen.setInt(2, cuentaOrigenId);
                 updateOrigen.executeUpdate();
 
-                //Acreditar el monto en la cuenta destino
                 String actualizarCuentaDestino = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
                 updateDestino = conn.prepareStatement(actualizarCuentaDestino);
                 updateDestino.setDouble(1, monto);
                 updateDestino.setInt(2, cuentaDestinoId);
                 updateDestino.executeUpdate();
 
-                //Registrar la transacción
                 String registrarTransaccion = "INSERT INTO transacciones (cuenta_origen_id, cuenta_destino_id, monto, tipo) VALUES (?, ?, ?, ?)";
                 insertTransaccion = conn.prepareStatement(registrarTransaccion);
                 insertTransaccion.setInt(1, cuentaOrigenId);
@@ -138,7 +130,101 @@ public class CoopAhorro {
 
     }
 
-    // Registrar una transacción en el historial
+
+    public void editarUsuario(int usuarioId, String nuevoNombre, String nuevoCorreo, String nuevaCedula) throws SQLException {
+        try (Connection conn = Connect.getConnection()) {
+            StringBuilder updateQuery = new StringBuilder("UPDATE usuarios SET ");
+            boolean hasPrevious = false;
+
+            // Construcción de la consulta SQL dinámica
+            if (nuevoNombre != null) {
+                updateQuery.append("nombre = ?");
+                hasPrevious = true;
+            }
+
+            if (nuevoCorreo != null) {
+                if (hasPrevious) updateQuery.append(", ");
+                updateQuery.append("correo = ?");
+                hasPrevious = true;
+            }
+
+            if (nuevaCedula != null) {
+                if (hasPrevious) updateQuery.append(", ");
+                updateQuery.append("cedula = ?");
+            }
+
+            updateQuery.append(" WHERE id = ?");
+
+            try (PreparedStatement stmt = conn.prepareStatement(updateQuery.toString())) {
+                int index = 1;
+
+                // Asignación de valores a la consulta
+                if (nuevoNombre != null) {
+                    stmt.setString(index++, nuevoNombre);
+                }
+                if (nuevoCorreo != null) {
+                    stmt.setString(index++, nuevoCorreo);
+                }
+                if (nuevaCedula != null) {
+                    stmt.setString(index++, nuevaCedula);
+                }
+
+                stmt.setInt(index, usuarioId);
+
+                // Ejecución de la actualización
+                stmt.executeUpdate();
+            }
+        }
+    }
+
+
+    public void eliminarUsuario(int usuarioId) throws SQLException {
+        Connection conn = null;
+        PreparedStatement deleteCuentas = null;
+        PreparedStatement deleteUsuario = null;
+
+        try {
+            conn = Connect.getConnection();
+            conn.setAutoCommit(false);
+
+            String deleteCuentasSQL = "DELETE FROM cuentas WHERE usuario_id = ?";
+            deleteCuentas = conn.prepareStatement(deleteCuentasSQL);
+            deleteCuentas.setInt(1, usuarioId);
+            deleteCuentas.executeUpdate();
+
+
+            String deleteUsuarioSQL = "DELETE FROM usuarios WHERE id = ?";
+            deleteUsuario = conn.prepareStatement(deleteUsuarioSQL);
+            deleteUsuario.setInt(1, usuarioId);
+            int filasAfectadas = deleteUsuario.executeUpdate();
+
+            if (filasAfectadas == 0) {
+                throw new SQLException("No se encontró el usuario con ID: " + usuarioId);
+            }
+
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback();
+            }
+            throw e;
+        } finally {
+            if (deleteCuentas != null) {
+                deleteCuentas.close();
+            }
+            if (deleteUsuario != null) {
+                deleteUsuario.close();
+            }
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
+        }
+    }
+
+
+
+
     private void registrarTransaccion(int cuentaOrigenId, int cuentaDestinoId, double monto, String tipo) throws SQLException {
         try (Connection conn = Connect.getConnection()) {
             String insertTransaccion = "INSERT INTO transacciones (cuenta_origen_id, cuenta_destino_id, monto, tipo, fecha) VALUES (?, ?, ?, ?, ?)";
@@ -153,7 +239,6 @@ public class CoopAhorro {
         }
     }
 
-    // Historial de transacciones de una cuenta
     public List<Transaccion> obtenerHistorial(int cuentaId) throws SQLException {
         List<Transaccion> historial = new ArrayList<>();
         try (Connection conn = Connect.getConnection()) {
@@ -179,7 +264,6 @@ public class CoopAhorro {
         return historial;
     }
 
-    // Saldo de una cuenta
     public double obtenerSaldo(int cuentaId) throws SQLException {
         double saldo = 0;
         try (Connection conn = Connect.getConnection()) {
