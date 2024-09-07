@@ -13,7 +13,7 @@ public class Main {
 
         while (true) {
             System.out.println("=== Cooperativa de Ahorro ===");
-            System.out.println("1. Registrar Usuario");
+            System.out.println("1. Registrar un nuevo Usuario");
             System.out.println("2. Realizar Depósito");
             System.out.println("3. Realizar Transferencia");
             System.out.println("4. Consultar Saldo");
@@ -22,7 +22,7 @@ public class Main {
             System.out.print("Seleccione una opción: ");
 
             int opcion = scanner.nextInt();
-            scanner.nextLine();  // Consumir la nueva línea
+            scanner.nextLine();
 
             try {
                 switch (opcion) {

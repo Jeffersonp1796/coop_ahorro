@@ -80,30 +80,30 @@ public class CoopAhorro {
         if (consultaorigen ==1 && consultadestino==1 ){
             try {
                 conn = Connect.getConnection();
-                conn.setAutoCommit(false); // Desactivar auto-commit para gestionar la transacción manualmente
+                conn.setAutoCommit(false);
 
 
-                // 1. Verificar si la cuenta origen tiene saldo suficiente
+                // Verificar si la cuenta origen tiene saldo suficiente
                 double saldoOrigen = obtenerSaldo(cuentaOrigenId);
                 if (saldoOrigen < monto) {
                     throw new SQLException("Saldo insuficiente en la cuenta origen.");
                 }
 
-                // 2. Debitar el monto de la cuenta origen
+                //Debitar el monto de la cuenta origen
                 String actualizarCuentaOrigen = "UPDATE cuentas SET saldo = saldo - ? WHERE id = ?";
                 updateOrigen = conn.prepareStatement(actualizarCuentaOrigen);
                 updateOrigen.setDouble(1, monto);
                 updateOrigen.setInt(2, cuentaOrigenId);
                 updateOrigen.executeUpdate();
 
-                // 3. Acreditar el monto en la cuenta destino
+                //Acreditar el monto en la cuenta destino
                 String actualizarCuentaDestino = "UPDATE cuentas SET saldo = saldo + ? WHERE id = ?";
                 updateDestino = conn.prepareStatement(actualizarCuentaDestino);
                 updateDestino.setDouble(1, monto);
                 updateDestino.setInt(2, cuentaDestinoId);
                 updateDestino.executeUpdate();
 
-                // 4. Registrar la transacción
+                //Registrar la transacción
                 String registrarTransaccion = "INSERT INTO transacciones (cuenta_origen_id, cuenta_destino_id, monto, tipo) VALUES (?, ?, ?, ?)";
                 insertTransaccion = conn.prepareStatement(registrarTransaccion);
                 insertTransaccion.setInt(1, cuentaOrigenId);
@@ -112,11 +112,11 @@ public class CoopAhorro {
                 insertTransaccion.setString(4, "TRANSFERENCIA");
                 insertTransaccion.executeUpdate();
 
-                conn.commit(); // Confirmar la transacción
+                conn.commit();
 
             } catch (SQLException e) {
                 if (conn != null) {
-                    conn.rollback(); // Revertir la transacción en caso de error
+                    conn.rollback();
                 }
                 throw e;
             } finally {
@@ -130,7 +130,7 @@ public class CoopAhorro {
                     insertTransaccion.close();
                 }
                 if (conn != null) {
-                    conn.setAutoCommit(true); // Restaurar el auto-commit
+                    conn.setAutoCommit(true);
                     conn.close();
                 }
             }

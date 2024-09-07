@@ -19,7 +19,6 @@ public class Transaccion {
         this.fecha = fecha;
     }
 
-    // Getters y setters
     public int getId() {
         return id;
     }
