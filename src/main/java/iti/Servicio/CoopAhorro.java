@@ -136,7 +136,6 @@ public class CoopAhorro {
             StringBuilder updateQuery = new StringBuilder("UPDATE usuarios SET ");
             boolean hasPrevious = false;
 
-            // Construcción de la consulta SQL dinámica
             if (nuevoNombre != null) {
                 updateQuery.append("nombre = ?");
                 hasPrevious = true;
@@ -171,7 +170,6 @@ public class CoopAhorro {
 
                 stmt.setInt(index, usuarioId);
 
-                // Ejecución de la actualización
                 stmt.executeUpdate();
             }
         }

@@ -13,8 +13,6 @@ public class Usuario {
         this.cedula = cedula;
 
     }
-
-    // Getters y setters
     public int getId() {
         return id;
     }

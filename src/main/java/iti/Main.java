@@ -106,7 +106,6 @@ public class Main {
         System.out.print("Ingrese la nueva cédula (deje en blanco para no cambiar): ");
         String cedula = scanner.nextLine();
 
-        // Si el usuario no proporciona un nuevo nombre, correo o cédula, se usan los valores actuales
         coopAhorro.editarUsuario(usuarioId,
                 nombre.isEmpty() ? null : nombre,
                 correo.isEmpty() ? null : correo,
