@@ -80,7 +80,7 @@ public class MainGra {
                     "Gestión de Usuarios",
                     0,
                     0,
-                    new ImageIcon("/Users/jeffersonchiliguano/Desktop/usuario.png"),
+                    new ImageIcon("/Users/jeffersonchiliguano/Desktop/usuario1.png"),
                     opciones,
                     opciones[0]
             );
