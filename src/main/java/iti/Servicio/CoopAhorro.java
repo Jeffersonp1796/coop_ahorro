@@ -157,7 +157,6 @@ public class CoopAhorro {
             try (PreparedStatement stmt = conn.prepareStatement(updateQuery.toString())) {
                 int index = 1;
 
-                // Asignación de valores a la consulta
                 if (nuevoNombre != null) {
                     stmt.setString(index++, nuevoNombre);
                 }
