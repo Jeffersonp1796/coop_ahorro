@@ -14,7 +14,7 @@ public class MainGra {
     public static void main(String[] args) {
         JFrame frame = new JFrame("Cooperativa de Ahorro");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 300);
+        frame.setSize(500, 300);
         frame.setLayout(new GridLayout(6, 1));
 
         JButton btnGestionarUsuarios = new JButton("Gestionar Usuarios");
@@ -71,19 +71,16 @@ public class MainGra {
     }
 
     private static void gestionarUsuarios() {
-        JFrame frame = new JFrame("Gestión de Usuarios");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         String[] opciones = {"Volver al Menú Principal", "Eliminar Usuario", "Editar Usuario", "Crear Usuario"};
 
-        while (true) {
             int seleccion = JOptionPane.showOptionDialog(
                     null,
                     "Seleccione una opción",
                     "Gestión de Usuarios",
-                    JOptionPane.DEFAULT_OPTION,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    null,
+                    0,
+                    0,
+                    new ImageIcon("/Users/jeffersonchiliguano/Desktop/usuario.png"),
                     opciones,
                     opciones[0]
             );
@@ -100,10 +97,7 @@ public class MainGra {
                     break;
                 case 0:
                     return;
-                default:
-                    JOptionPane.showMessageDialog(null, "Opción inválida.");
             }
-        }
     }
 
 
